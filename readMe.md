@@ -1,10 +1,12 @@
-/*Todo*/
+#Shadows And Logic (idk name undecided)
 
-***Scaling subimages affects origin points shifts it to undesired position
+#####Todo
 
--Animation system
--physics system
--tilemap system
--enemy ai
--player movement
--card placement
+**Scaling subimages affects origin points shifts it to undesired position**
+
+[] Animation system
+[] physics system
+[] tilemap system
+[] enemy ai
+[] player movement
+[x] card placement
