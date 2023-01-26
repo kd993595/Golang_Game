@@ -23,9 +23,10 @@ const (
 )
 
 var (
-	random     *rand.Rand
-	tilemapImg *ebiten.Image
-	worldImg   *ebiten.Image
+	random      *rand.Rand
+	tilemapImg1 *ebiten.Image
+	tilemapImg2 *ebiten.Image
+	worldImg    *ebiten.Image
 )
 
 func init() {
@@ -34,7 +35,13 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tilemapImg = ebiten.NewImageFromImage(img)
+	tilemapImg1 = ebiten.NewImageFromImage(img)
+
+	img, _, err = ebitenutil.NewImageFromFile("./tilemap/roguelikeSheet.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tilemapImg2 = ebiten.NewImageFromImage(img)
 
 	worldImg = ebiten.NewImage(worldgen.Width*16, worldgen.Height*16)
 	worldImg.Fill(color.RGBA{255, 0, 0, 255})
@@ -166,7 +173,7 @@ func NewGame() *Game {
 	mymap := worldgen.Tilemap{}
 	mymap.Initialize(random)
 	mymap.ProcessMap(newmap.GameMap)
-	mymap.DrawWorld(worldImg, tilemapImg)
+	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
 	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}, tiles: mymap}
 }

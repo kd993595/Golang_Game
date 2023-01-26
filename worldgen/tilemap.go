@@ -10,6 +10,7 @@ import (
 const (
 	grass = iota //304,272
 	tree         //272,144
+  
 )
 
 type Tilemap struct {
@@ -34,15 +35,22 @@ func (t *Tilemap) ProcessMap(m [Width][Height]int) {
 	}
 }
 
-func (t *Tilemap) DrawWorld(e *ebiten.Image, tImg *ebiten.Image) {
+func (t *Tilemap) DrawWorld(e *ebiten.Image, tImg1 *ebiten.Image,tImg2 *ebiten.Image) {
 	for x := 0; x < Width; x++ {
 		for y := 0; y < Height; y++ {
 			op := ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(x*16), float64(y*16))
-			e.DrawImage(tImg.SubImage(image.Rect(304, 272, 320, 288)).(*ebiten.Image), &op)
+			e.DrawImage(tImg1.SubImage(image.Rect(304, 272, 320, 288)).(*ebiten.Image), &op) //grass drawn all over map
+      
 			if t.GameMap[x][y] == tree {
-				e.DrawImage(tImg.SubImage(image.Rect(272, 144, 288, 160)).(*ebiten.Image), &op)
+				e.DrawImage(tImg1.SubImage(image.Rect(272, 144, 288, 160)).(*ebiten.Image), &op)
 			}
+
+      //probabilty gotta figure out for decorations
+      probability := t.Randgen.Intn(100)
+      if(probability<10){
+        
+      }
 		}
 	}
 }
