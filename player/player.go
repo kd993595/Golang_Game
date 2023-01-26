@@ -4,14 +4,13 @@ import (
 	"image"
 	"log"
 
-	"github.com/KevinD/LogicAndNightmares/physic"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const (
-  idle = iota
-  running
+	idle = iota
+	running
 )
 
 type Player struct {
@@ -25,9 +24,8 @@ type Player struct {
 	Img    *ebiten.Image
 	Speed  int
 	Idle   bool
-  Hitbox physic.RectAABB
-  MoveBox physic.RectAABB
-  State int
+
+	State int
 }
 
 func (p *Player) Frame() image.Image {

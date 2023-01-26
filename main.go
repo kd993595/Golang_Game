@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"log"
 	"math/rand"
 
@@ -14,30 +16,35 @@ import (
 )
 
 const (
-	screenWidth  = 640
-	screenHeight = 480
+	screenWidth  = 480
+	screenHeight = 360
 	MapHeight    = 100
-	seed         = 752
+	seed         = 47
 )
 
 var (
 	random     *rand.Rand
 	tilemapImg *ebiten.Image
+	worldImg   *ebiten.Image
 )
 
 func init() {
 	random = rand.New(rand.NewSource(seed))
-	img, _, err := ebitenutil.NewImageFromFile("./tilemap/Spritesheet/roguelikeSheet_transparent.png")
+	img, _, err := ebitenutil.NewImageFromFile("./tilemap/tileset.png")
 	if err != nil {
 		log.Fatal(err)
 	}
 	tilemapImg = ebiten.NewImageFromImage(img)
+
+	worldImg = ebiten.NewImage(worldgen.Width*16, worldgen.Height*16)
+	worldImg.Fill(color.RGBA{255, 0, 0, 255})
 }
 
 type Game struct {
 	cam            vec2
 	p              player.Player
 	d              card.Deck
+	tiles          worldgen.Tilemap
 	selectionPhase bool
 	selected       int
 }
@@ -45,6 +52,21 @@ type Game struct {
 type vec2 struct {
 	x int
 	y int
+}
+
+func (g *Game) clampCam() {
+	if g.cam.x < 0 {
+		g.cam.x = 0
+	}
+	if g.cam.y < 0 {
+		g.cam.y = 0
+	}
+	if g.cam.x > worldgen.Width*16-screenWidth {
+		g.cam.x = worldgen.Width*16 - screenWidth
+	}
+	if g.cam.y > worldgen.Height*16-screenHeight {
+		g.cam.y = worldgen.Height*16 - screenHeight
+	}
 }
 
 func (g *Game) Update() error {
@@ -67,7 +89,21 @@ func (g *Game) Update() error {
 		}
 	}
 
-	g.p.Update()
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.cam.x += 5
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.cam.y += 5
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyA) {
+		g.cam.x -= 5
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyW) {
+		g.cam.y -= 5
+	}
+	g.clampCam()
+
+	//g.p.Update()
 
 	return nil
 }
@@ -91,8 +127,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, 0)
+	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam.x, g.cam.y, g.cam.x+screenWidth, g.cam.y+screenHeight)).(*ebiten.Image), op)
+
+	/*op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(g.p.PosX), float64(g.p.PosY))
-	screen.DrawImage(g.p.Frame().(*ebiten.Image), op)
+	screen.DrawImage(g.p.Frame().(*ebiten.Image), op)*/
 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 
@@ -118,23 +158,43 @@ func NewGame() *Game {
 	t_d := card.Deck{CardDeck: t_cs}
 
 	t_p.Create("./player/player.png")
-	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}}
-}
-
-func main() {
 
 	newmap := worldgen.WorldGenerator{}
 	newmap.Initialize(random)
 	newmap.GenerateBitMap()
 
+	mymap := worldgen.Tilemap{}
+	mymap.Initialize(random)
+	mymap.ProcessMap(newmap.GameMap)
+	mymap.DrawWorld(worldImg, tilemapImg)
+
+	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}, tiles: mymap}
+}
+
+func main() {
+
+	/*newmap := worldgen.WorldGenerator{}
+	newmap.Initialize(random)
+	newmap.GenerateBitMap()
+
 	var levelstring string = ""
-	for x := 0; x < 150; x++ {
-		for y := 0; y < 100; y++ {
+	for x := 0; x < worldgen.Width; x++ {
+		for y := 0; y < worldgen.Height; y++ {
 			levelstring += fmt.Sprintf("%v", newmap.GameMap[x][y])
 		}
 		levelstring += "\n"
 	}
-	fmt.Print(levelstring)
+	//fmt.Print(levelstring)
+
+	f, err := os.Create("mapdata.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	_, err2 := f.WriteString(levelstring)
+	if err2 != nil {
+		log.Fatal(err2)
+	}*/
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Hello, World!")

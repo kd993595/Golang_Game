@@ -8,11 +8,11 @@ import (
 
 const (
 	tilesize          = 32
-	Width             = 150
-	Height            = 100
+	Width             = 300
+	Height            = 200
 	fillpercent       = 50
 	wallThresholdSize = 50
-	roomThresholdSize = 25
+	roomThresholdSize = 30
 	passageRadius     = 1
 )
 
