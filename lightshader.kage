@@ -1,0 +1,62 @@
+package main
+
+var Time float
+var Cursor vec2
+var ScreenSize vec2
+
+func random (st vec2) float{
+    return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);
+}
+
+//banded lights
+/*func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
+	d1 := abs(distance(position.xy,Cursor))
+	clr := imageSrc0At(texCoord)
+    clr.a = 0.8
+	if(d1<25){
+		clr.a = 0
+	}else if (d1<35){
+        clr.a = 0.1
+    }else if(d1<45){
+        clr.a = 0.2
+    }
+	
+	return clr
+}*/
+
+
+
+func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
+	d1 := abs(distance(position.xy,Cursor))
+	clr := imageSrc0At(texCoord)
+    change := sin(Time*2)
+
+    clr.a = smoothstep(10,30+change,d1)
+    clr.a = min(clr.a,0.8)
+	
+	return clr
+}
+
+//circle light but edge dithers badly
+/*func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
+	d1 := abs(distance(position.xy,Cursor))
+	chance := random(vec2(sin(position.x),cos(position.y))*Time)
+
+    if chance > 0.5{
+        chance = mix(chance,1,.6)
+    }else{
+        chance = mix(chance,0,.6)
+    }
+    
+    clr := imageSrc0At(texCoord)
+    if(d1>30){
+		clr.a = 1
+	}else if (d1<25){
+        clr.a = 0
+    }else{
+        //clr.a = step(chance,fract(d1))
+        clr.a = smoothstep(chance-.2,chance+.2,fract(d1))
+    }
+	
+	return clr
+}*/

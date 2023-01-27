@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"image"
 	"image/color"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	screenWidth  = 480
-	screenHeight = 360
+	screenWidth  = 320
+	screenHeight = 240
 	MapHeight    = 100
 	seed         = 47
 )
@@ -27,7 +28,15 @@ var (
 	tilemapImg1 *ebiten.Image
 	tilemapImg2 *ebiten.Image
 	worldImg    *ebiten.Image
+	maskImg     *ebiten.Image
+
+	//go:embed lightshader.kage
+	lighting_go []byte
 )
+
+var shaderSrcs = [][]byte{
+	lighting_go,
+}
 
 func init() {
 	random = rand.New(rand.NewSource(seed))
@@ -45,6 +54,9 @@ func init() {
 
 	worldImg = ebiten.NewImage(worldgen.Width*16, worldgen.Height*16)
 	worldImg.Fill(color.RGBA{255, 0, 0, 255})
+
+	maskImg = ebiten.NewImage(screenWidth, screenHeight)
+	maskImg.Fill(color.Black)
 }
 
 type Game struct {
@@ -54,6 +66,8 @@ type Game struct {
 	tiles          worldgen.Tilemap
 	selectionPhase bool
 	selected       int
+	time           int
+	shaders        map[int]*ebiten.Shader
 }
 
 type vec2 struct {
@@ -77,6 +91,7 @@ func (g *Game) clampCam() {
 }
 
 func (g *Game) Update() error {
+	g.time++
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
 		g.selectionPhase = !g.selectionPhase
@@ -112,6 +127,17 @@ func (g *Game) Update() error {
 
 	//g.p.Update()
 
+	if g.shaders == nil {
+		g.shaders = map[int]*ebiten.Shader{}
+	}
+	if _, ok := g.shaders[0]; !ok {
+		s, err := ebiten.NewShader([]byte(shaderSrcs[0]))
+		if err != nil {
+			return err
+		}
+		g.shaders[0] = s
+	}
+
 	return nil
 }
 
@@ -141,6 +167,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(g.p.PosX), float64(g.p.PosY))
 	screen.DrawImage(g.p.Frame().(*ebiten.Image), op)*/
 
+	//shader part
+	w, h := screen.Size()
+	cx, cy := ebiten.CursorPosition()
+
+	opShader := &ebiten.DrawRectShaderOptions{}
+	opShader.Uniforms = map[string]interface{}{
+		"Time":       float32(g.time) / 60,
+		"Cursor":     []float32{float32(cx), float32(cy)},
+		"ScreenSize": []float32{float32(w), float32(h)},
+	}
+	opShader.Images[0] = maskImg
+	screen.DrawRectShader(w, h, g.shaders[0], opShader)
+
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 
 }
@@ -166,6 +205,13 @@ func NewGame() *Game {
 
 	t_p.Create("./player/player.png")
 
+	//shader creation
+	s, err := ebiten.NewShader([]byte(shaderSrcs[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var myShaders map[int]*ebiten.Shader = map[int]*ebiten.Shader{1: s}
+
 	newmap := worldgen.WorldGenerator{}
 	newmap.Initialize(random)
 	newmap.GenerateBitMap()
@@ -175,7 +221,7 @@ func NewGame() *Game {
 	mymap.ProcessMap(newmap.GameMap)
 	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
-	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}, tiles: mymap}
+	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}, tiles: mymap, shaders: myShaders}
 }
 
 func main() {
@@ -203,7 +249,7 @@ func main() {
 		log.Fatal(err2)
 	}*/
 
-	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
+	ebiten.SetWindowSize(screenWidth*3, screenHeight*3)
 	ebiten.SetWindowTitle("Hello, World!")
 	g := NewGame()
 	if err := ebiten.RunGame(g); err != nil {

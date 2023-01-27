@@ -44,7 +44,7 @@ func (thisgame *WorldGenerator) GenerateBitMap() {
 	for i := 0; i < 3; i++ {
 		thisgame.smoothmap()
 	}
-	thisgame.createBorders(5)
+	thisgame.createBorders(4)
 	thisgame.ProcessMap()
 
 }
@@ -322,7 +322,7 @@ func (thisgame *WorldGenerator) createBorders(bordersize int) {
 	//creates borded around map depending on size
 	for x := 0; x < Width; x++ {
 		for y := 0; y < Height; y++ {
-			if x <= bordersize || x >= Width-bordersize || y <= bordersize || y >= Height-bordersize {
+			if x < bordersize || x >= Width-bordersize || y < bordersize || y >= Height-bordersize {
 				thisgame.GameMap[x][y] = 1
 			}
 		}
