@@ -24,11 +24,13 @@ const (
 )
 
 var (
-	random      *rand.Rand
-	tilemapImg1 *ebiten.Image
-	tilemapImg2 *ebiten.Image
-	worldImg    *ebiten.Image
-	maskImg     *ebiten.Image
+	random       *rand.Rand
+	tilemapImg1  *ebiten.Image
+	tilemapImg2  *ebiten.Image
+	worldImg     *ebiten.Image
+	maskImg      *ebiten.Image
+	lightTexture *ebiten.Image
+	lightPoint   *ebiten.Image
 
 	//go:embed lightshader.kage
 	lighting_go []byte
@@ -52,11 +54,20 @@ func init() {
 	}
 	tilemapImg2 = ebiten.NewImageFromImage(img)
 
+	img, _, err = ebitenutil.NewImageFromFile("lightPoint.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	lightPoint = ebiten.NewImageFromImage(img)
+
 	worldImg = ebiten.NewImage(worldgen.Width*16, worldgen.Height*16)
 	worldImg.Fill(color.RGBA{255, 0, 0, 255})
 
 	maskImg = ebiten.NewImage(screenWidth, screenHeight)
 	maskImg.Fill(color.Black)
+
+	lightTexture = ebiten.NewImage(screenWidth, screenHeight)
+	lightTexture.Fill(color.Black)
 }
 
 type Game struct {
@@ -127,7 +138,7 @@ func (g *Game) Update() error {
 
 	//g.p.Update()
 
-	if g.shaders == nil {
+	/*if g.shaders == nil {
 		g.shaders = map[int]*ebiten.Shader{}
 	}
 	if _, ok := g.shaders[0]; !ok {
@@ -136,12 +147,17 @@ func (g *Game) Update() error {
 			return err
 		}
 		g.shaders[0] = s
-	}
+	}*/
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	lightTexture.Fill(color.Black)
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, 0)
+	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam.x, g.cam.y, g.cam.x+screenWidth, g.cam.y+screenHeight)).(*ebiten.Image), op)
 
 	if g.selectionPhase {
 		for i := 0; i < len(g.d.CardDeck); i++ {
@@ -159,16 +175,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, 0)
-	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam.x, g.cam.y, g.cam.x+screenWidth, g.cam.y+screenHeight)).(*ebiten.Image), op)
-
-	/*op := &ebiten.DrawImageOptions{}
+	/*op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(g.p.PosX), float64(g.p.PosY))
 	screen.DrawImage(g.p.Frame().(*ebiten.Image), op)*/
 
 	//shader part
-	w, h := screen.Size()
+	/*w, h := screen.Size()
 	cx, cy := ebiten.CursorPosition()
 
 	opShader := &ebiten.DrawRectShaderOptions{}
@@ -178,7 +190,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		"ScreenSize": []float32{float32(w), float32(h)},
 	}
 	opShader.Images[0] = maskImg
-	screen.DrawRectShader(w, h, g.shaders[0], opShader)
+	opShader.Images[1] = lightTexture
+	screen.DrawRectShader(w, h, g.shaders[0], opShader)*/
+
+	//lightmap rendering
+	w, h := lightPoint.Size()
+	cx, cy := ebiten.CursorPosition()
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(cx)-float64(w/2), float64(cy)-float64(h/2))
+	lightTexture.DrawImage(lightPoint, op)
+
+	//blending images together using multiply
+	op = &ebiten.DrawImageOptions{}
+	op.CompositeMode = ebiten.CompositeModeMultiply
+	screen.DrawImage(lightTexture, op)
 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 
