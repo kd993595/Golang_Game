@@ -2,19 +2,29 @@ package physic
 
 import "github.com/KevinD/LogicAndNightmares/player"
 
-type World struct{
-  tilemap []RectAABB
+type World struct {
+	tilemap       []RectAABB
+	BoundingBoxes []Quad
 }
 
-type RigidBody struct{
-  body RectAABB
+type Quad struct {
+	x             int
+	y             int
+	width         int
+	height        int
+	staticBodies  []RigidBody
+	dynamicBodies []RigidBody
 }
 
-func (w *World) MovePlayer(p *player.Player,dir Vec2){
-  p.PosX += dir.X
-  p.PosY += dir.Y
+type RigidBody struct {
+	Body RectAABB
+}
 
-  for i:=0;i<len(w.tilemap);i++{
-    
-  }
+func (w *World) MovePlayer(p *player.Player, dir Vec2) {
+	p.PosX += dir.X
+	p.PosY += dir.Y
+
+	for i := 0; i < len(w.tilemap); i++ {
+
+	}
 }

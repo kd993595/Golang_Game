@@ -71,7 +71,7 @@ func init() {
 }
 
 type Game struct {
-	cam            vec2
+	cam            [2]int
 	p              player.Player
 	d              card.Deck
 	tiles          worldgen.Tilemap
@@ -81,23 +81,18 @@ type Game struct {
 	shaders        map[int]*ebiten.Shader
 }
 
-type vec2 struct {
-	x int
-	y int
-}
-
 func (g *Game) clampCam() {
-	if g.cam.x < 0 {
-		g.cam.x = 0
+	if g.cam[0] < 0 {
+		g.cam[0] = 0
 	}
-	if g.cam.y < 0 {
-		g.cam.y = 0
+	if g.cam[1] < 0 {
+		g.cam[1] = 0
 	}
-	if g.cam.x > worldgen.Width*16-screenWidth {
-		g.cam.x = worldgen.Width*16 - screenWidth
+	if g.cam[0] > worldgen.Width*16-screenWidth {
+		g.cam[0] = worldgen.Width*16 - screenWidth
 	}
-	if g.cam.y > worldgen.Height*16-screenHeight {
-		g.cam.y = worldgen.Height*16 - screenHeight
+	if g.cam[1] > worldgen.Height*16-screenHeight {
+		g.cam[1] = worldgen.Height*16 - screenHeight
 	}
 }
 
@@ -123,16 +118,16 @@ func (g *Game) Update() error {
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.cam.x += 5
+		g.cam[0] += 5
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.cam.y += 5
+		g.cam[1] += 5
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.cam.x -= 5
+		g.cam[0] -= 5
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.cam.y -= 5
+		g.cam[1] -= 5
 	}
 	g.clampCam()
 
@@ -157,7 +152,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(0, 0)
-	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam.x, g.cam.y, g.cam.x+screenWidth, g.cam.y+screenHeight)).(*ebiten.Image), op)
+	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam[0], g.cam[1], g.cam[0]+screenWidth, g.cam[1]+screenHeight)).(*ebiten.Image), op)
 
 	if g.selectionPhase {
 		for i := 0; i < len(g.d.CardDeck); i++ {
@@ -246,7 +241,7 @@ func NewGame() *Game {
 	mymap.ProcessMap(newmap.GameMap)
 	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
-	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: vec2{0, 0}, tiles: mymap, shaders: myShaders}
+	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: [2]int{0, 0}, tiles: mymap, shaders: myShaders}
 }
 
 func main() {
@@ -262,7 +257,6 @@ func main() {
 		}
 		levelstring += "\n"
 	}
-	//fmt.Print(levelstring)
 
 	f, err := os.Create("mapdata.txt")
 	if err != nil {
