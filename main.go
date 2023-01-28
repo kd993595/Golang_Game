@@ -119,7 +119,7 @@ func (g *Game) Update() error {
 		}
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyD) {
+	/*if ebiten.IsKeyPressed(ebiten.KeyD) {
 		g.cam[0] += 5
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
@@ -130,7 +130,7 @@ func (g *Game) Update() error {
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		g.cam[1] -= 5
-	}
+	}*/
 	g.clampCam()
 
 	//g.p.Update()
@@ -211,7 +211,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func NewGame() *Game {
-	var t_p player.Player = player.Player{Count: 0, PosX: 0, PosY: 0, FrameX: 0, FrameY: 0, Width: 28, Height: 34, Img: nil, Speed: 5, Idle: true}
+	var t_p player.Player = player.Player{Count: 0, FrameX: 0, FrameY: 0, Width: 28, Height: 34, Img: nil, Speed: 5, Idle: true}
+	t_p.Create("./player/player.png")
 
 	img, _, err := ebitenutil.NewImageFromFile("./card/card.png")
 	if err != nil {
@@ -225,8 +226,6 @@ func NewGame() *Game {
 
 	t_d := card.Deck{CardDeck: t_cs}
 
-	t_p.Create("./player/player.png")
-
 	//shader creation
 	s, err := ebiten.NewShader([]byte(shaderSrcs[0]))
 	if err != nil {
@@ -234,15 +233,18 @@ func NewGame() *Game {
 	}
 	var myShaders map[int]*ebiten.Shader = map[int]*ebiten.Shader{1: s}
 
+	//generate 1 and 0 bitmaps
 	newmap := worldgen.WorldGenerator{}
 	newmap.Initialize(random)
 	newmap.GenerateBitMap()
 
+	//draw all tile image onto image to render
 	mymap := worldgen.Tilemap{}
 	mymap.Initialize(random)
 	mymap.ProcessMap(newmap.GameMap)
 	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
+	//create physic world where all objects with hitbox resides
 	physicWorld := physic.World{}
 	physicWorld.Initialize(newmap.GameMap)
 

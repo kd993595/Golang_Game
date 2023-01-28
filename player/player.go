@@ -8,15 +8,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-const (
-	idle = iota
-	running
-)
-
 type Player struct {
 	Count  int
-	PosX   int
-	PosY   int
 	FrameX int
 	FrameY int
 	Width  int
@@ -24,8 +17,6 @@ type Player struct {
 	Img    *ebiten.Image
 	Speed  int
 	Idle   bool
-
-	State int
 }
 
 func (p *Player) Frame() image.Image {
@@ -39,23 +30,6 @@ func (p *Player) Frame() image.Image {
 }
 
 func (p *Player) Update() {
-	p.Idle = true
-	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		p.PosX += p.Speed
-		p.Idle = false
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		p.PosY += p.Speed
-		p.Idle = false
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		p.PosX -= p.Speed
-		p.Idle = false
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		p.PosY -= p.Speed
-		p.Idle = false
-	}
 	p.Count++
 }
 

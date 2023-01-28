@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 
-	"github.com/KevinD/LogicAndNightmares/player"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -87,13 +86,4 @@ func isBoundary(x, y int) bool {
 
 type RigidBody struct {
 	Body RectAABB
-}
-
-func (w *World) MovePlayer(p *player.Player, dir Vec2) {
-	p.PosX += dir.X
-	p.PosY += dir.Y
-
-	for i := 0; i < len(w.tilemap); i++ {
-
-	}
 }
