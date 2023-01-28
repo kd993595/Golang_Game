@@ -1,4 +1,4 @@
-package physic
+package components
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"

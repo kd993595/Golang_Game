@@ -33,6 +33,11 @@ func (p *Player) Update() {
 	p.Count++
 }
 
+func (p *Player) ChangeState() {
+	p.Idle = !p.Idle
+	p.Count = 0
+}
+
 func (p *Player) Create(filepath string) {
 	img, _, err := ebitenutil.NewImageFromFile(filepath)
 	if err != nil {

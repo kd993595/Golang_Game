@@ -1,4 +1,4 @@
-package worldgen
+package components
 
 import (
 	"math/rand"
@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Width             = 200 //make sure width and height in world.go file for physics match
+	Width             = 200
 	Height            = 200
 	fillpercent       = 50
 	wallThresholdSize = 50

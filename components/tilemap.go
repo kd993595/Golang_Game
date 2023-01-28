@@ -1,4 +1,4 @@
-package worldgen
+package components
 
 import (
 	"image"

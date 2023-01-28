@@ -9,9 +9,8 @@ import (
 	"math/rand"
 
 	"github.com/KevinD/LogicAndNightmares/card"
-	"github.com/KevinD/LogicAndNightmares/physic"
+	"github.com/KevinD/LogicAndNightmares/components"
 	"github.com/KevinD/LogicAndNightmares/player"
-	"github.com/KevinD/LogicAndNightmares/worldgen"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -61,7 +60,7 @@ func init() {
 	}
 	lightPoint = ebiten.NewImageFromImage(img)
 
-	worldImg = ebiten.NewImage(worldgen.Width*16, worldgen.Height*16)
+	worldImg = ebiten.NewImage(components.Width*16, components.Height*16)
 	worldImg.Fill(color.RGBA{255, 0, 0, 255})
 
 	maskImg = ebiten.NewImage(screenWidth, screenHeight)
@@ -75,12 +74,12 @@ type Game struct {
 	cam            [2]int
 	p              player.Player
 	d              card.Deck
-	tiles          worldgen.Tilemap
+	tiles          components.Tilemap
 	selectionPhase bool
 	selected       int
 	time           int
 	shaders        map[int]*ebiten.Shader
-	space          *physic.World
+	space          *components.World
 }
 
 func (g *Game) clampCam() {
@@ -90,11 +89,11 @@ func (g *Game) clampCam() {
 	if g.cam[1] < 0 {
 		g.cam[1] = 0
 	}
-	if g.cam[0] > worldgen.Width*16-screenWidth {
-		g.cam[0] = worldgen.Width*16 - screenWidth
+	if g.cam[0] > components.Width*16-screenWidth {
+		g.cam[0] = components.Width*16 - screenWidth
 	}
-	if g.cam[1] > worldgen.Height*16-screenHeight {
-		g.cam[1] = worldgen.Height*16 - screenHeight
+	if g.cam[1] > components.Height*16-screenHeight {
+		g.cam[1] = components.Height*16 - screenHeight
 	}
 }
 
@@ -234,18 +233,18 @@ func NewGame() *Game {
 	var myShaders map[int]*ebiten.Shader = map[int]*ebiten.Shader{1: s}
 
 	//generate 1 and 0 bitmaps
-	newmap := worldgen.WorldGenerator{}
+	newmap := components.WorldGenerator{}
 	newmap.Initialize(random)
 	newmap.GenerateBitMap()
 
 	//draw all tile image onto image to render
-	mymap := worldgen.Tilemap{}
+	mymap := components.Tilemap{}
 	mymap.Initialize(random)
 	mymap.ProcessMap(newmap.GameMap)
 	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
 	//create physic world where all objects with hitbox resides
-	physicWorld := physic.World{}
+	physicWorld := components.World{}
 	physicWorld.Initialize(newmap.GameMap)
 
 	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: [2]int{0, 0}, tiles: mymap, shaders: myShaders, space: &physicWorld}

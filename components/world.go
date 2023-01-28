@@ -1,4 +1,4 @@
-package physic
+package components
 
 import (
 	"fmt"
@@ -9,9 +9,6 @@ import (
 )
 
 const (
-	//make sure these match those in wordlgen.go file
-	Width    = 200
-	Height   = 200
 	tileSize = 16 //must match size of tile images in actuual game
 )
 
@@ -46,7 +43,7 @@ func (w *World) Initialize(m [Width][Height]int) {
 
 	for x := 0; x < Width; x++ {
 		for y := 0; y < Height; y++ {
-			if !isBoundary(x, y) && m[x][y] == 1 {
+			if !isWorldBoundary(x, y) && m[x][y] == 1 {
 				if m[x+1][y] == 0 || m[x-1][y] == 0 || m[x][y+1] == 0 || m[x][y-1] == 0 {
 					newBody := RectAABB{PosX: x * tileSize, PosY: y * tileSize, Width: tileSize, Height: tileSize}
 					for i := 0; i < len(w.BoundingBoxes)-1; i++ {
@@ -80,7 +77,7 @@ func (q *Quad) DrawCollisionStatic(screen *ebiten.Image, cam [2]int) {
 	}
 }
 
-func isBoundary(x, y int) bool {
+func isWorldBoundary(x, y int) bool {
 	return x == 0 || x == Width-1 || y == 0 || y == Height-1
 }
 
