@@ -9,6 +9,7 @@ import (
 	"math/rand"
 
 	"github.com/KevinD/LogicAndNightmares/card"
+	"github.com/KevinD/LogicAndNightmares/physic"
 	"github.com/KevinD/LogicAndNightmares/player"
 	"github.com/KevinD/LogicAndNightmares/worldgen"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -79,6 +80,7 @@ type Game struct {
 	selected       int
 	time           int
 	shaders        map[int]*ebiten.Shader
+	space          *physic.World
 }
 
 func (g *Game) clampCam() {
@@ -241,7 +243,10 @@ func NewGame() *Game {
 	mymap.ProcessMap(newmap.GameMap)
 	mymap.DrawWorld(worldImg, tilemapImg1, tilemapImg2)
 
-	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: [2]int{0, 0}, tiles: mymap, shaders: myShaders}
+	physicWorld := physic.World{}
+	physicWorld.Initialize(newmap.GameMap)
+
+	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: [2]int{0, 0}, tiles: mymap, shaders: myShaders, space: &physicWorld}
 }
 
 func main() {

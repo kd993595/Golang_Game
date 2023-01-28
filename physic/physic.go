@@ -71,7 +71,7 @@ func (r *RectAABB) CollideWithAABB(o *RectAABB) bool {
 		return true
 	}
 
-	return true
+	return false
 }
 
 func (p *Polygon) CollideWithPolygon(o *Polygon) bool {
