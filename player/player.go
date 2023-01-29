@@ -2,43 +2,38 @@ package player
 
 import (
 	"image"
-	"log"
-
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+//rectangle returned for image has values hard-coded into it so if player image were to change change values
 type Player struct {
-	Count  int
-	FrameX int
-	FrameY int
-	Width  int
-	Height int
-	Img    *ebiten.Image
-	Speed  int
-	Idle   bool
+	Count      int
+	Idle       bool
+	FacingLeft bool
 }
 
-func (p *Player) Frame() image.Image {
-	p.FrameX = 0
-	i := (p.Count / 10) % 4
-	if p.Idle {
-		p.FrameX = 112
+//160,0 for idle and 30*40 and 245,0 for running
+
+func (p *Player) Frame() image.Rectangle {
+	xPos := 169
+	yPos := 0
+	imgWidth := 18
+	imgHeight := 39
+	i := (p.Count / 10) % 6
+	if !p.Idle {
+		xPos = 250
 	}
-	p.FrameX += p.Width * i
-	return p.Img.SubImage(image.Rect(p.FrameX, p.FrameY, p.FrameX+p.Width, p.Height))
+	yPos += imgHeight * i
+	return image.Rect(xPos, yPos, xPos+imgWidth, yPos+imgHeight)
 }
 
 func (p *Player) Update() {
 	p.Count++
+	if p.Count == 60 {
+		p.Count = 0
+	}
 }
 
-func (p *Player) ChangeState() {
-	p.Idle = !p.Idle
-	p.Count = 0
-}
-
-func (p *Player) Create(filepath string) {
+/*func (p *Player) Create(filepath string) {
 	img, _, err := ebitenutil.NewImageFromFile(filepath)
 	if err != nil {
 		log.Fatal(err)
@@ -51,4 +46,4 @@ func (p *Player) Create(filepath string) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(2, 2)
 	p.Img.DrawImage(origEbitenImage, op)
-}
+}*/

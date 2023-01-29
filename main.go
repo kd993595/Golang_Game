@@ -6,14 +6,13 @@ import (
 	"image"
 	"image/color"
 	"log"
+
 	"math/rand"
 
-	"github.com/KevinD/LogicAndNightmares/card"
 	"github.com/KevinD/LogicAndNightmares/components"
 	"github.com/KevinD/LogicAndNightmares/player"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 const (
@@ -31,6 +30,9 @@ var (
 	maskImg      *ebiten.Image
 	lightTexture *ebiten.Image
 	lightPoint   *ebiten.Image
+	lightPoint2  *ebiten.Image
+	lightPoint3  *ebiten.Image
+	playerImg    *ebiten.Image
 
 	//go:embed lightshader.kage
 	lighting_go []byte
@@ -60,6 +62,18 @@ func init() {
 	}
 	lightPoint = ebiten.NewImageFromImage(img)
 
+	img, _, err = ebitenutil.NewImageFromFile("lightPoint2.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	lightPoint2 = ebiten.NewImageFromImage(img)
+
+	img, _, err = ebitenutil.NewImageFromFile("lightPoint3.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	lightPoint3 = ebiten.NewImageFromImage(img)
+
 	worldImg = ebiten.NewImage(components.Width*16, components.Height*16)
 	worldImg.Fill(color.RGBA{255, 0, 0, 255})
 
@@ -67,19 +81,29 @@ func init() {
 	maskImg.Fill(color.Black)
 
 	lightTexture = ebiten.NewImage(screenWidth, screenHeight)
-	lightTexture.Fill(color.Black)
+	lightTexture.Fill(color.RGBA{50, 50, 50, 200})
+
+	img, _, err = ebitenutil.NewImageFromFile("./player/spritesheet.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	playerImg = ebiten.NewImageFromImage(img)
+
 }
 
 type Game struct {
-	cam            [2]int
-	p              player.Player
-	d              card.Deck
-	tiles          components.Tilemap
-	selectionPhase bool
-	selected       int
-	time           int
-	shaders        map[int]*ebiten.Shader
-	space          *components.World
+	cam     [2]int
+	p       PlayerSystem
+	time    int
+	shaders map[int]*ebiten.Shader
+	space   *components.World
+	components.LightSystem
+}
+
+type PlayerSystem struct {
+	player.Player
+	moveBox components.RectAABB
+	vel     [2]int
 }
 
 func (g *Game) clampCam() {
@@ -100,39 +124,35 @@ func (g *Game) clampCam() {
 func (g *Game) Update() error {
 	g.time++
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
-		g.selectionPhase = !g.selectionPhase
-	}
-	if g.selectionPhase { //card being displayed
-		if inpututil.IsKeyJustPressed(ebiten.KeyArrowRight) {
-			g.selected += 1
-			if g.selected >= len(g.d.CardDeck)-1 {
-				g.selected = len(g.d.CardDeck) - 1
-			}
-		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyArrowLeft) {
-			g.selected -= 1
-			if g.selected < 0 {
-				g.selected = 0
-			}
-		}
-	}
+	//Use inpututil.IsKeyJustPressed(ebiten.KeyE) to detect one key press not multiple within seconds
 
-	/*if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.cam[0] += 5
+	g.p.Idle = true
+	g.p.vel = [2]int{0, 0}
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.p.vel[0] = 1
+		g.p.Idle = false
+		g.p.FacingLeft = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.cam[1] += 5
+		g.p.vel[1] = 1
+		g.p.Idle = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.cam[0] -= 5
+		g.p.vel[0] = -1
+		g.p.Idle = false
+		g.p.FacingLeft = true
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.cam[1] -= 5
-	}*/
+		g.p.vel[1] = -1
+		g.p.Idle = false
+	}
+	g.cam[0] += int((int(g.p.moveBox.PosX) - g.cam[0] - screenWidth/2) / 20)
+	g.cam[1] += int((int(g.p.moveBox.PosY) - g.cam[1] - screenHeight/2) / 20)
 	g.clampCam()
 
-	//g.p.Update()
+	g.p.Update()
+
+	g.space.MovePlayer(&g.p.moveBox, g.p.vel)
 
 	/*if g.shaders == nil {
 		g.shaders = map[int]*ebiten.Shader{}
@@ -149,31 +169,19 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	lightTexture.Fill(color.Black)
+	lightTexture.Fill(color.RGBA{75, 75, 75, 255})
 
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, 0)
 	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam[0], g.cam[1], g.cam[0]+screenWidth, g.cam[1]+screenHeight)).(*ebiten.Image), op)
 
-	if g.selectionPhase {
-		for i := 0; i < len(g.d.CardDeck); i++ {
-			if i == g.selected {
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Scale(1.2, 1.2)
-				op.GeoM.Translate((float64)(90+(58*i)), 200)
-
-				screen.DrawImage(g.d.CardDeck[i].Img, op)
-				continue
-			}
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate((float64)(90+(58*i)), 375)
-			screen.DrawImage(g.d.CardDeck[i].Img, op)
-		}
+	op.GeoM.Reset()
+	if g.p.FacingLeft {
+		op.GeoM.Scale(-1, 1)
+		op.GeoM.Translate(float64(g.p.moveBox.PosX-g.cam[0]+14), float64(g.p.moveBox.PosY-g.cam[1]-30))
+	} else {
+		op.GeoM.Translate(float64(g.p.moveBox.PosX-g.cam[0]-6), float64(g.p.moveBox.PosY-g.cam[1]-30))
 	}
-
-	/*op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(g.p.PosX), float64(g.p.PosY))
-	screen.DrawImage(g.p.Frame().(*ebiten.Image), op)*/
+	screen.DrawImage(playerImg.SubImage(g.p.Frame()).(*ebiten.Image), op)
 
 	//shader part
 	/*w, h := screen.Size()
@@ -190,16 +198,21 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawRectShader(w, h, g.shaders[0], opShader)*/
 
 	//lightmap rendering
-	w, h := lightPoint.Size()
+
 	cx, cy := ebiten.CursorPosition()
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(cx)-float64(w/2), float64(cy)-float64(h/2))
-	lightTexture.DrawImage(lightPoint, op)
+	g.LightSystem.DrawLight([2]int{cx, cy}, lightPoint, color.RGBA{255, 10, 10, 0}, 1)
+
+	//g.LightSystem.DrawLight([2]int{g.p.moveBox.PosX - g.cam[0] - 3, g.p.moveBox.PosY - g.cam[1] - 25}, lightPoint2, nil, playerrad)
+
+	op.GeoM.Reset()
+	op.CompositeMode = ebiten.CompositeModeSourceOver
+	op.GeoM.Translate(50, 50)
+	screen.DrawImage(lightPoint3, op)
 
 	//blending images together using multiply
 	op = &ebiten.DrawImageOptions{}
 	op.CompositeMode = ebiten.CompositeModeMultiply
-	screen.DrawImage(lightTexture, op)
+	screen.DrawImage(g.LightSystem.GetLightMap(), op)
 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 
@@ -210,20 +223,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func NewGame() *Game {
-	var t_p player.Player = player.Player{Count: 0, FrameX: 0, FrameY: 0, Width: 28, Height: 34, Img: nil, Speed: 5, Idle: true}
-	t_p.Create("./player/player.png")
-
-	img, _, err := ebitenutil.NewImageFromFile("./card/card.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-	origCardImage := ebiten.NewImageFromImage(img)
-	var t_cs [8]card.Card
-	for i := 0; i < len(t_cs); i++ {
-		t_cs[i] = card.Card{Img: origCardImage}
-	}
-
-	t_d := card.Deck{CardDeck: t_cs}
+	var t_p PlayerSystem = PlayerSystem{Player: player.Player{Count: 1, Idle: true, FacingLeft: false}, moveBox: components.RectAABB{PosX: 100, PosY: 100, Width: 10, Height: 5}, vel: [2]int{0, 0}}
 
 	//shader creation
 	s, err := ebiten.NewShader([]byte(shaderSrcs[0]))
@@ -247,7 +247,11 @@ func NewGame() *Game {
 	physicWorld := components.World{}
 	physicWorld.Initialize(newmap.GameMap)
 
-	return &Game{p: t_p, d: t_d, selectionPhase: false, selected: 0, cam: [2]int{0, 0}, tiles: mymap, shaders: myShaders, space: &physicWorld}
+	//creating light system
+	myLights := components.LightSystem{}
+	myLights.Initialize(lightTexture)
+
+	return &Game{p: t_p, cam: [2]int{0, 0}, shaders: myShaders, space: &physicWorld, LightSystem: myLights}
 }
 
 func main() {

@@ -77,6 +77,26 @@ func (q *Quad) DrawCollisionStatic(screen *ebiten.Image, cam [2]int) {
 	}
 }
 
+func (w *World) MovePlayer(r *RectAABB, vel [2]int) {
+	for i := 0; i < len(w.BoundingBoxes); i++ {
+		if w.BoundingBoxes[i].QuadCollide(r) {
+			r.PosX += vel[0]
+			r.PosY += vel[1]
+			for j := 0; j < len(w.BoundingBoxes[i].StaticBodies); j++ {
+				if w.BoundingBoxes[i].StaticBodies[j].CollideWithAABB(r) {
+					if vel[0] != 0 {
+						r.PosX -= vel[0]
+					}
+					if vel[1] != 0 {
+						r.PosY -= vel[1]
+					}
+
+				}
+			}
+		}
+	}
+}
+
 func isWorldBoundary(x, y int) bool {
 	return x == 0 || x == Width-1 || y == 0 || y == Height-1
 }

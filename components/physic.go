@@ -1,7 +1,10 @@
 package components
 
 import (
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -52,6 +55,10 @@ func (p *Polygon) DebugDrawShape(screen *ebiten.Image, subImg *ebiten.Image, clr
 	}
 	screen.DrawTriangles(vs, is, subImg, op)
 
+}
+
+func (r *RectAABB) DebugDrawRect(scr *ebiten.Image, offset [2]int) {
+	ebitenutil.DrawRect(scr, float64(r.PosX-offset[0]), float64(r.PosY-offset[1]), float64(r.Width), float64(r.Height), color.RGBA{100, 255, 100, 255})
 }
 
 func (r *RectAABB) MoveRect(dir Vec2) {
