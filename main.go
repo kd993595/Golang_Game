@@ -29,9 +29,10 @@ var (
 	worldImg     *ebiten.Image
 	maskImg      *ebiten.Image
 	lightTexture *ebiten.Image
-	lightPoint   *ebiten.Image
-	lightPoint2  *ebiten.Image
-	lightPoint3  *ebiten.Image
+	lightPoint   *ebiten.Image //hard circle
+	lightPoint2  *ebiten.Image //for glow
+	lightPoint3  *ebiten.Image //soft circle
+	glowTexture  *ebiten.Image
 	playerImg    *ebiten.Image
 
 	//go:embed lightshader.kage
@@ -75,13 +76,16 @@ func init() {
 	lightPoint3 = ebiten.NewImageFromImage(img)
 
 	worldImg = ebiten.NewImage(components.Width*16, components.Height*16)
-	worldImg.Fill(color.RGBA{255, 0, 0, 255})
+	worldImg.Fill(color.Black)
 
 	maskImg = ebiten.NewImage(screenWidth, screenHeight)
 	maskImg.Fill(color.Black)
 
 	lightTexture = ebiten.NewImage(screenWidth, screenHeight)
-	lightTexture.Fill(color.RGBA{50, 50, 50, 200})
+	lightTexture.Fill(color.RGBA{75, 75, 75, 255})
+
+	glowTexture = ebiten.NewImage(screenWidth, screenHeight)
+	glowTexture.Fill(color.Transparent)
 
 	img, _, err = ebitenutil.NewImageFromFile("./player/spritesheet.png")
 	if err != nil {
@@ -98,6 +102,7 @@ type Game struct {
 	shaders map[int]*ebiten.Shader
 	space   *components.World
 	components.LightSystem
+	components.GlowSystem
 }
 
 type PlayerSystem struct {
@@ -170,6 +175,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	lightTexture.Fill(color.RGBA{75, 75, 75, 255})
+	glowTexture.Fill(color.Transparent)
 
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(worldImg.SubImage(image.Rect(g.cam[0], g.cam[1], g.cam[0]+screenWidth, g.cam[1]+screenHeight)).(*ebiten.Image), op)
@@ -198,18 +204,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawRectShader(w, h, g.shaders[0], opShader)*/
 
 	//lightmap rendering
-
 	cx, cy := ebiten.CursorPosition()
-	g.LightSystem.DrawLight([2]int{cx, cy}, lightPoint, color.RGBA{255, 10, 10, 0}, 1)
+	g.LightSystem.DrawLight([2]float64{float64(cx), float64(cy)}, lightPoint, color.RGBA{255, 10, 10, 0}, 1)
+	g.LightSystem.DrawLight([2]float64{float64(g.p.moveBox.PosX-g.cam[0]) + 4, float64(g.p.moveBox.PosY-g.cam[1]) - 13}, lightPoint3, nil, .15)
+	g.GlowSystem.DrawGlow([2]float64{float64(g.p.moveBox.PosX-g.cam[0]) + 4, float64(g.p.moveBox.PosY-g.cam[1]) - 13}, lightPoint2, color.RGBA{255, 0, 0, 0}, .25)
 
-	//g.LightSystem.DrawLight([2]int{g.p.moveBox.PosX - g.cam[0] - 3, g.p.moveBox.PosY - g.cam[1] - 25}, lightPoint2, nil, playerrad)
-
-	op.GeoM.Reset()
+	//blending images together for glowmap
+	op = &ebiten.DrawImageOptions{}
 	op.CompositeMode = ebiten.CompositeModeSourceOver
-	op.GeoM.Translate(50, 50)
-	screen.DrawImage(lightPoint3, op)
+	screen.DrawImage(g.GetGlowMap(), op)
 
-	//blending images together using multiply
+	//blending images together for lightmap
 	op = &ebiten.DrawImageOptions{}
 	op.CompositeMode = ebiten.CompositeModeMultiply
 	screen.DrawImage(g.LightSystem.GetLightMap(), op)
@@ -251,7 +256,11 @@ func NewGame() *Game {
 	myLights := components.LightSystem{}
 	myLights.Initialize(lightTexture)
 
-	return &Game{p: t_p, cam: [2]int{0, 0}, shaders: myShaders, space: &physicWorld, LightSystem: myLights}
+	//creating glow system
+	myglow := components.GlowSystem{}
+	myglow.Initialize(glowTexture)
+
+	return &Game{p: t_p, cam: [2]int{0, 0}, shaders: myShaders, space: &physicWorld, LightSystem: myLights, GlowSystem: myglow}
 }
 
 func main() {

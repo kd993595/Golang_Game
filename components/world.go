@@ -84,10 +84,34 @@ func (w *World) MovePlayer(r *RectAABB, vel [2]int) {
 			r.PosY += vel[1]
 			for j := 0; j < len(w.BoundingBoxes[i].StaticBodies); j++ {
 				if w.BoundingBoxes[i].StaticBodies[j].CollideWithAABB(r) {
-					if vel[0] != 0 {
+					/*if vel[0] != 0 {
 						r.PosX -= vel[0]
 					}
+
 					if vel[1] != 0 {
+						r.PosY -= vel[1]
+					}*/
+
+					if vel[0] == 0 || vel[1] == 0 {
+						if vel[0] != 0 {
+							r.PosX -= vel[0]
+						}
+
+						if vel[1] != 0 {
+							r.PosY -= vel[1]
+						}
+						continue
+					}
+
+					r.PosX -= vel[0]
+					r.PosY -= vel[1]
+
+					r.PosX += vel[0]
+					if w.BoundingBoxes[i].StaticBodies[j].CollideWithAABB(r) {
+						r.PosX -= vel[0]
+					}
+					r.PosY += vel[1]
+					if w.BoundingBoxes[i].StaticBodies[j].CollideWithAABB(r) {
 						r.PosY -= vel[1]
 					}
 
